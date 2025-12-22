@@ -199,31 +199,31 @@ class ArquitecturaMDPLBTR(Scene):
         self.play(FadeIn(apache_m1), Write(apache_m1_label),
                   FadeIn(apache_l1), Write(apache_l1_label))
 
-        # Nuevas líneas: MDP → Apache M1 → OSB M1 → Tux A/L → Tandem A
-        line_mdp_apache_m1 = Line(mdp.get_right(), apache_m1.get_left())
-        line_apache_m1_osb_m1 = Line(apache_m1.get_right(), osb_nodes[0].get_left())
-        line_osb_m1_tux1 = Line(osb_nodes[0].get_right(), tux1.get_left())
-        line_osb_m1_tux2 = Line(osb_nodes[0].get_right(), tux2.get_left())
+        # Nuevas líneas: MDP → Apache L1 → OSB L1 → Tux A/L → Tandem A
+        line_mdp_apache_l1 = Line(mdp.get_right(), apache_l1.get_left())
+        line_apache_l1_osb_l1 = Line(apache_l1.get_right(), osb_nodes[4].get_left())
+        line_osb_l1_tux1 = Line(osb_nodes[4].get_right(), tux1.get_left())
+        line_osb_l1_tux2 = Line(osb_nodes[4].get_right(), tux2.get_left())
         line_tux1_tan1_new = Line(tux1.get_right(), tan1.get_left())
         line_tux2_tan1_new = Line(tux2.get_right(), tan1.get_left())
 
         # Crear de izquierda a derecha (secuencial) como la primera fase
-        self.play(Create(line_mdp_apache_m1), run_time=0.3)
-        self.play(Create(line_apache_m1_osb_m1), run_time=0.3)
-        self.play(Create(line_osb_m1_tux1), run_time=0.25)
-        self.play(Create(line_osb_m1_tux2), run_time=0.25)
+        self.play(Create(line_mdp_apache_l1), run_time=0.3)
+        self.play(Create(line_apache_l1_osb_l1), run_time=0.3)
+        self.play(Create(line_osb_l1_tux1), run_time=0.25)
+        self.play(Create(line_osb_l1_tux2), run_time=0.25)
         self.play(Create(line_tux1_tan1_new), Create(line_tux2_tan1_new), run_time=0.3)
 
-        # Nuevas transacciones (16) todas pasando por Apache M1 → OSB M1 → Tux A/L → Tandem A
+        # Nuevas transacciones (16) todas pasando por Apache L1 → OSB L1 → Tux A/L → Tandem A
         apache_routes = []
         for i in range(16):
             next_tux = tux1 if i % 2 == 0 else tux2
             apache_routes.append([
                 mdp.get_right(),
-                apache_m1.get_left(),
-                apache_m1.get_right(),
-                osb_nodes[0].get_left(),
-                osb_nodes[0].get_right(),
+                apache_l1.get_left(),
+                apache_l1.get_right(),
+                osb_nodes[4].get_left(),
+                osb_nodes[4].get_right(),
                 next_tux.get_left(),
                 tan1.get_left(),
             ])
@@ -239,6 +239,133 @@ class ArquitecturaMDPLBTR(Scene):
             apache_anims.append(MoveAlongPath(dot, path, rate_func=linear, run_time=2.0))
 
         self.play(LaggedStart(*apache_anims, lag_ratio=0.08))
+
+        # Switch to Apache M1 and run all transactions
+        self.play(
+            FadeOut(line_mdp_apache_l1),
+            FadeOut(line_apache_l1_osb_l1),
+            FadeOut(line_osb_l1_tux1),
+            FadeOut(line_osb_l1_tux2),
+        )
+        line_mdp_apache_m1 = Line(mdp.get_right(), apache_m1.get_left())
+        line_apache_m1_osb_m1 = Line(apache_m1.get_right(), osb_nodes[0].get_left())
+        line_osb_m1_tux1 = Line(osb_nodes[0].get_right(), tux1.get_left())
+        line_osb_m1_tux2 = Line(osb_nodes[0].get_right(), tux2.get_left())
+        self.play(Create(line_mdp_apache_m1), run_time=0.3)
+        self.play(Create(line_apache_m1_osb_m1), run_time=0.3)
+        self.play(Create(line_osb_m1_tux1), run_time=0.25)
+        self.play(Create(line_osb_m1_tux2), run_time=0.25)
+
+        apache_m1_routes = []
+        for i in range(16):
+            next_tux = tux1 if i % 2 == 0 else tux2
+            apache_m1_routes.append([
+                mdp.get_right(),
+                apache_m1.get_left(),
+                apache_m1.get_right(),
+                osb_nodes[0].get_left(),
+                osb_nodes[0].get_right(),
+                next_tux.get_left(),
+                tan1.get_left(),
+            ])
+        apache_m1_dots = [Dot(color=WHITE, radius=0.06) for _ in apache_m1_routes]
+        for dot in apache_m1_dots:
+            self.add(dot)
+        apache_m1_anims = []
+        for dot, route in zip(apache_m1_dots, apache_m1_routes):
+            path = VMobject()
+            path.set_points_as_corners(route)
+            apache_m1_anims.append(MoveAlongPath(dot, path, rate_func=linear, run_time=2.0))
+        self.play(LaggedStart(*apache_m1_anims, lag_ratio=0.08))
+
+        # Switch back to Apache L1 and run all transactions
+        self.play(
+            FadeOut(line_mdp_apache_m1),
+            FadeOut(line_apache_m1_osb_m1),
+            FadeOut(line_osb_m1_tux1),
+            FadeOut(line_osb_m1_tux2),
+        )
+        line_mdp_apache_l1_round2 = Line(mdp.get_right(), apache_l1.get_left())
+        line_apache_l1_osb_l1_round2 = Line(apache_l1.get_right(), osb_nodes[4].get_left())
+        line_osb_l1_tux1_round2 = Line(osb_nodes[4].get_right(), tux1.get_left())
+        line_osb_l1_tux2_round2 = Line(osb_nodes[4].get_right(), tux2.get_left())
+        self.play(Create(line_mdp_apache_l1_round2), run_time=0.3)
+        self.play(Create(line_apache_l1_osb_l1_round2), run_time=0.3)
+        self.play(Create(line_osb_l1_tux1_round2), run_time=0.25)
+        self.play(Create(line_osb_l1_tux2_round2), run_time=0.25)
+
+        apache_l1_routes_round2 = []
+        for i in range(16):
+            next_tux = tux1 if i % 2 == 0 else tux2
+            apache_l1_routes_round2.append([
+                mdp.get_right(),
+                apache_l1.get_left(),
+                apache_l1.get_right(),
+                osb_nodes[4].get_left(),
+                osb_nodes[4].get_right(),
+                next_tux.get_left(),
+                tan1.get_left(),
+            ])
+        apache_l1_dots_round2 = [Dot(color=WHITE, radius=0.06) for _ in apache_l1_routes_round2]
+        for dot in apache_l1_dots_round2:
+            self.add(dot)
+        apache_l1_anims_round2 = []
+        for dot, route in zip(apache_l1_dots_round2, apache_l1_routes_round2):
+            path = VMobject()
+            path.set_points_as_corners(route)
+            apache_l1_anims_round2.append(MoveAlongPath(dot, path, rate_func=linear, run_time=2.0))
+        self.play(LaggedStart(*apache_l1_anims_round2, lag_ratio=0.08))
+
+        # Switch back to F5 and run all transactions with no timeouts
+        self.play(
+            FadeOut(line_mdp_apache_l1_round2),
+            FadeOut(line_apache_l1_osb_l1_round2),
+            FadeOut(line_osb_l1_tux1_round2),
+            FadeOut(line_osb_l1_tux2_round2),
+        )
+        line_mdp_f5_final = Line(mdp.get_right(), f5.get_left())
+        self.play(Create(line_mdp_f5_final))
+        lines_f5_osb_final = []
+        lines_osb_tux1_final = []
+        lines_osb_tux2_final = []
+        for osb in osb_nodes:
+            lfo = Line(f5.get_right(), osb.get_left())
+            lines_f5_osb_final.append(lfo)
+            self.play(Create(lfo), run_time=0.2)
+        for osb in osb_nodes:
+            l1 = Line(osb.get_right(), tux1.get_left())
+            l2 = Line(osb.get_right(), tux2.get_left())
+            lines_osb_tux1_final.append(l1)
+            lines_osb_tux2_final.append(l2)
+            self.play(Create(l1), run_time=0.2)
+            self.play(Create(l2), run_time=0.2)
+
+        f5_routes_final = []
+        for osb in osb_nodes:
+            f5_routes_final.append([mdp.get_right(), f5.get_left(), osb.get_left(), tux1.get_left(), tan1.get_left()])
+            f5_routes_final.append([mdp.get_right(), f5.get_left(), osb.get_left(), tux2.get_left(), tan1.get_left()])
+
+        f5_dots_final = [Dot(color=WHITE, radius=0.06) for _ in f5_routes_final]
+        for dot in f5_dots_final:
+            self.add(dot)
+        f5_anims_final = []
+        for dot, route in zip(f5_dots_final, f5_routes_final):
+            path = VMobject()
+            path.set_points_as_corners(route)
+            f5_anims_final.append(MoveAlongPath(dot, path, rate_func=linear, run_time=2.0))
+        self.play(LaggedStart(*f5_anims_final, lag_ratio=0.08))
+        self.play(*[dot.animate.set_color(GREEN) for dot in f5_dots_final], run_time=1.0)
+        tandem_offsets = [
+            UP * 0.1 + LEFT * 0.05,
+            DOWN * 0.1 + RIGHT * 0.05,
+            UP * 0.05 + RIGHT * 0.1,
+            DOWN * 0.15 + LEFT * 0.1,
+            ORIGIN,
+        ]
+        self.play(*[
+            dot.animate.move_to(tan1.get_center() + tandem_offsets[i % len(tandem_offsets)])
+            for i, dot in enumerate(f5_dots_final)
+        ], run_time=0.6)
 
         # Mostrar subtítulo al final
         self.play(FadeIn(subtitle, run_time=1.3))
