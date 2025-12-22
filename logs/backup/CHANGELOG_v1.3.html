@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHANGELOG - PES HAProxy</title>
+    <link href="https://fonts.googleapis.com/css2?family=-apple-system,BlinkMacSystemFont,Segoe+UI,Roboto,Oxygen,Ubuntu,Fira+Sans,Droid+Sans,Helvetica+Neue,sans-serif&display=swap" rel="stylesheet">
+    <style>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, 'Helvetica Neue', sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #172B4D;
+            background: #FFFFFF;
+            padding: 40px 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .date-header {
+            font-size: 20px;
+            font-weight: 400;
+            color: #172B4D;
+            margin-bottom: 20px;
+            margin-top: 40px;
+        }
+        
+        .date-header:first-child {
+            margin-top: 0;
+        }
+        
+        .changelog-entry {
+            margin-bottom: 24px;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-right: 8px;
+            letter-spacing: 0.3px;
+        }
+        
+        .badge-added {
+            background: #00875A;
+            color: #FFFFFF;
+        }
+        
+        .badge-updated {
+            background: #0052CC;
+            color: #FFFFFF;
+        }
+        
+        .badge-deleted {
+            background: #DE350B;
+            color: #FFFFFF;
+        }
+        
+        .badge-info {
+            background: #FFAB00;
+            color: #172B4D;
+        }
+        
+        .entry-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #172B4D;
+            display: inline;
+        }
+        
+        .entry-description {
+            font-size: 14px;
+            color: #5E6C84;
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="date-header">17 Diciembre 2025</div>
+    
+    <div class="changelog-entry">
+        <div>
+            <span class="badge badge-added">ADDED</span>
+            <span class="entry-title">Sidebar lateral fijo</span>
+        </div>
+        <div class="entry-description">
+            Índice siempre visible durante el scroll. Buscador integrado en el sidebar. Botones de descarga accesibles en todo momento. 320px de ancho optimizado para navegación.
+        </div>
+    </div>
+    
+    <div class="changelog-entry">
+        <div>
+            <span class="badge badge-added">ADDED</span>
+            <span class="entry-title">Control de zoom ajustable</span>
+        </div>
+        <div class="entry-description">
+            Slider visual para ajustar tamaño del texto entre 80% y 140%. Afecta solo el contenido, mantiene títulos en tamaño original. Preferencia guardada en localStorage para próximas visitas.
+        </div>
+    </div>
+    
+    <div class="changelog-entry">
+        <div>
+            <span class="badge badge-updated">UPDATED</span>
+            <span class="entry-title">Tamaño de fuentes incrementado</span>
+        </div>
+        <div class="entry-description">
+            Contenido general de 13pt a 16pt. Comandos de código de 9pt a 12pt. Code inline de 10pt a 13pt. Mejora significativa en legibilidad sin necesidad de zoom del navegador.
+        </div>
+    </div>
+    
+    <div class="changelog-entry">
+        <div>
+            <span class="badge badge-updated">UPDATED</span>
+            <span class="entry-title">Tabla de contenidos compacta</span>
+        </div>
+        <div class="entry-description">
+            Nombres de secciones acortados para mejor visualización en sidebar. Highlight visual al hacer hover. Border izquierdo indica sección activa. Navegación más eficiente.
+        </div>
+    </div>
+    
+    <div class="changelog-entry">
+        <div>
+            <span class="badge badge-updated">UPDATED</span>
+            <span class="entry-title">Layout responsive mejorado</span>
+        </div>
+        <div class="entry-description">
+            Desktop: sidebar fijo a la izquierda. Tablet: sidebar más angosto (280px). Mobile: sidebar se convierte en header colapsable arriba. Adaptación automática según viewport.
+        </div>
+    </div>
+    
+    <div class="changelog-entry">
+        <div>
+            <span class="badge badge-deleted">DELETED</span>
+            <span class="entry-title">Watermark vertical eliminado</span>
+        </div>
+        <div class="entry-description">
+            El watermark vertical con fecha rotada se eliminó de la posición fija izquierda. Ahora aparece de forma horizontal en el footer del sidebar.
+        </div>
+    </div>
+    
+    <div class="changelog-entry">
+        <div>
+            <span class="badge badge-deleted">DELETED</span>
+            <span class="entry-title">Búsqueda en esquina superior derecha</span>
+        </div>
+        <div class="entry-description">
+            La búsqueda ya no está en posición fixed arriba a la derecha. Se integró completamente en el sidebar para mantener consistencia del layout.
+        </div>
+    </div>
+    
+    <div class="changelog-entry">
+        <div>
+            <span class="badge badge-info">INFO</span>
+            <span class="entry-title">Arquitectura Atomix mantenida</span>
+        </div>
+        <div class="entry-description">
+            Los archivos CSS, JavaScript y HTML se mantienen separados. Reutilizable para todos los PES futuros. Un cambio en pes-style.css afecta a todos los documentos. Filosofía Unix de modularidad preservada.
+        </div>
+    </div>
+    
+    <div class="date-header">16 Diciembre 2025</div>
+    
+    <div class="changelog-entry">
+        <div>
+            <span class="badge badge-added">ADDED</span>
+            <span class="entry-title">Secciones AS-IS y TO-BE con videos</span>
+        </div>
+        <div class="entry-description">
+            Agregadas dos secciones para videos demostrativos. AS-IS muestra arquitectura actual con Apache. TO-BE ilustra arquitectura objetivo con HAProxy. Videos embebidos con controles nativos HTML5.
+        </div>
+    </div>
+    
+    <div class="changelog-entry">
+        <div>
+            <span class="badge badge-added">ADDED</span>
+            <span class="entry-title">Estructura de archivos Atomix</span>
+        </div>
+        <div class="entry-description">
+            Separación de responsabilidades: index.html para estructura, pes-style.css para estilos, pes-functions.js para comportamiento. Carpetas videos/ e images/ para assets. README.md con documentación completa.
+        </div>
+    </div>
+</body>
+</html>
