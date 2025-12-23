@@ -1,0 +1,14 @@
+timeline:
+  labels:
+    - Ene 2024
+    - Mar 2024
+    - Nov 2025
+    - Dic 2025
+    - Ene 2026
+  events:
+    - Creando Escenario
+    - Timeout F5
+    - Bypass Apache
+    - Falla Apache L1
+    - Switch Apache M1/L1
+    - RollBack F5

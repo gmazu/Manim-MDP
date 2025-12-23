@@ -1,4 +1,32 @@
+from pathlib import Path
+
+import yaml
 from manim import *
+
+
+def load_timeline_config(path: Path = Path("cronos.yaml")) -> dict:
+    if not path.exists():
+        return {
+            "labels": ["Ene 2024", "Mar 2024", "Nov 2025", "Dic 2025", "Ene 2026"],
+            "events": [
+                "Creando Escenario",
+                "Timeout F5",
+                "Bypass Apache",
+                "Falla Apache L1",
+                "Switch Apache M1/L1",
+                "RollBack F5",
+            ],
+        }
+    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    timeline = data.get("timeline") or {}
+    labels = timeline.get("labels") or []
+    events = timeline.get("events") or []
+    if len(labels) < 2:
+        raise ValueError("cronos.yaml: se requieren minimo 2 hitos en timeline.labels")
+    if len(labels) > 6:
+        print("cronos.yaml: se paso el maximo de 6 hitos, se usaran solo los primeros 6.")
+        labels = labels[:6]
+    return {"labels": labels, "events": events}
 
 class ArquitecturaMDPLBTR(Scene):
     def construct(self):
@@ -16,15 +44,10 @@ class ArquitecturaMDPLBTR(Scene):
         self.play(FadeIn(version_general))
 
         # Timeline de hitos (alineada con la firma)
+        timeline_config = load_timeline_config()
         timeline_line = Line(LEFT, RIGHT).set_width(version_general.width)
-        timeline_positions = [0.0, 0.25, 0.5, 0.75, 1.0]
-        timeline_labels = [
-            Text("Ene 2024", font_size=7),
-            Text("Mar 2024", font_size=7),
-            Text("Nov 2025", font_size=7),
-            Text("Dic 2025", font_size=7),
-            Text("Ene 2026", font_size=7),
-        ]
+        timeline_positions = [i / max(1, len(timeline_config["labels"]) - 1) for i in range(len(timeline_config["labels"]))]
+        timeline_labels = [Text(label, font_size=7) for label in timeline_config["labels"]]
         timeline_dots = [Dot(radius=0.04, color=WHITE) for _ in timeline_positions]
         for dot, label, pos in zip(timeline_dots, timeline_labels, timeline_positions):
             dot.move_to(timeline_line.point_from_proportion(pos))
@@ -35,9 +58,13 @@ class ArquitecturaMDPLBTR(Scene):
         timeline_group.next_to(version_general, UP, buff=0.22, aligned_edge=RIGHT)
         timeline_marker = Dot(radius=0.05, color=GREEN).move_to(timeline_dots[0].get_center())
         self.play(FadeIn(timeline_group), FadeIn(timeline_marker))
-        timeline_event = Text("Creando Escenario", font_size=14).next_to(timeline_group, UP, buff=0.14)
+        events = timeline_config.get("events") or []
+        def event_text(idx: int, fallback: str) -> str:
+            return events[idx] if idx < len(events) else fallback
+
+        timeline_event = Text(event_text(0, "Creando Escenario"), font_size=14).next_to(timeline_group, UP, buff=0.14)
         self.play(FadeIn(timeline_event), run_time=0.6)
-        next_event = Text("Timeout F5", font_size=14).next_to(timeline_group, UP, buff=0.14)
+        next_event = Text(event_text(1, "Timeout F5"), font_size=14).next_to(timeline_group, UP, buff=0.14)
         self.play(FadeOut(timeline_event), FadeIn(next_event), run_time=0.6)
         timeline_event = next_event
 
@@ -207,7 +234,7 @@ class ArquitecturaMDPLBTR(Scene):
             for i, dot in enumerate(delivered_dots)
         ], run_time=0.6)
 
-        next_event = Text("Bypass Apache", font_size=14).next_to(timeline_group, UP, buff=0.14)
+        next_event = Text(event_text(2, "Bypass Apache"), font_size=14).next_to(timeline_group, UP, buff=0.14)
         self.play(
             timeline_marker.animate.move_to(timeline_dots[1].get_center()),
             FadeOut(timeline_event),
@@ -274,7 +301,7 @@ class ArquitecturaMDPLBTR(Scene):
 
         self.play(LaggedStart(*apache_anims, lag_ratio=0.08))
 
-        next_event = Text("Falla Apache L1", font_size=14).next_to(timeline_group, UP, buff=0.14)
+        next_event = Text(event_text(3, "Falla Apache L1"), font_size=14).next_to(timeline_group, UP, buff=0.14)
         self.play(
             timeline_marker.animate.move_to(timeline_dots[2].get_center()),
             FadeOut(timeline_event),
@@ -299,7 +326,7 @@ class ArquitecturaMDPLBTR(Scene):
         self.play(Create(line_osb_m1_tux1), run_time=0.25)
         self.play(Create(line_osb_m1_tux2), run_time=0.25)
 
-        next_event = Text("Switch Apache M1/L1", font_size=14).next_to(timeline_group, UP, buff=0.14)
+        next_event = Text(event_text(4, "Switch Apache M1/L1"), font_size=14).next_to(timeline_group, UP, buff=0.14)
         self.play(
             timeline_marker.animate.move_to(timeline_dots[3].get_center()),
             FadeOut(timeline_event),
@@ -368,7 +395,7 @@ class ArquitecturaMDPLBTR(Scene):
             apache_l1_anims_round2.append(MoveAlongPath(dot, path, rate_func=linear, run_time=2.0))
         self.play(LaggedStart(*apache_l1_anims_round2, lag_ratio=0.08))
 
-        next_event = Text("RollBack F5", font_size=14).next_to(timeline_group, UP, buff=0.14)
+        next_event = Text(event_text(5, "RollBack F5"), font_size=14).next_to(timeline_group, UP, buff=0.14)
         self.play(
             timeline_marker.animate.move_to(timeline_dots[4].get_center()),
             FadeOut(timeline_event),
