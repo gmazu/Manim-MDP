@@ -96,10 +96,12 @@ class ArquitecturaMDPLBTR(Scene):
             timeline_positions = [i / max(1, len(timeline_config["labels"]) - 1) for i in range(len(timeline_config["labels"]))]
         timeline_labels = [Text(label, font_size=7) for label in timeline_config["labels"]]
         timeline_dots = [Dot(radius=0.04, color=WHITE) for _ in timeline_positions]
-        for dot, label, pos in zip(timeline_dots, timeline_labels, timeline_positions):
+        for idx, (dot, label, pos) in enumerate(zip(timeline_dots, timeline_labels, timeline_positions)):
             dot.move_to(timeline_line.point_from_proportion(pos))
-            label.next_to(dot, UP, buff=0.3)
-            label.rotate(PI / 4, about_point=dot.get_center())
+            direction = UP if idx % 2 == 0 else DOWN
+            angle = PI / 4 if idx % 2 == 0 else -PI / 4
+            label.next_to(dot, direction, buff=0.3)
+            label.rotate(angle, about_point=dot.get_center())
             label.shift(RIGHT * (dot.get_center()[0] - label.get_left()[0]))
         timeline_group = VGroup(timeline_line, *timeline_dots, *timeline_labels)
         timeline_group.to_corner(DR).shift(UP * 0.6 + LEFT * 0.1)
