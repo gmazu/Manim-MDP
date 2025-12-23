@@ -7,7 +7,7 @@ class ArquitecturaMDPLBTR(Scene):
             "Arquitectura sin HA\ndesde marzo 2024\n hasta enero 2025\naproximadamente.",
             font_size=12,
         ).to_corner(UL).shift(DOWN * 1.0 + RIGHT * 0.2)
-        version_document = Text("versión v2.2.3", font_size=9).next_to(title, DOWN, aligned_edge=RIGHT, buff=0.1)
+        version_document = Text("versión v2.2.4", font_size=9).next_to(title, DOWN, aligned_edge=RIGHT, buff=0.1)
         self.play(Write(title), FadeIn(subtitle), FadeIn(version_document))
 
         
@@ -28,8 +28,9 @@ class ArquitecturaMDPLBTR(Scene):
         timeline_dots = [Dot(radius=0.04, color=WHITE) for _ in timeline_positions]
         for dot, label, pos in zip(timeline_dots, timeline_labels, timeline_positions):
             dot.move_to(timeline_line.point_from_proportion(pos))
-            label.next_to(dot, UP, buff=0.3).shift(RIGHT * 0.06)
+            label.next_to(dot, UP, buff=0.3)
             label.rotate(PI / 4, about_point=dot.get_center())
+            label.shift(RIGHT * (dot.get_center()[0] - label.get_left()[0]))
         timeline_group = VGroup(timeline_line, *timeline_dots, *timeline_labels)
         timeline_group.next_to(version_general, UP, buff=0.22, aligned_edge=RIGHT)
         timeline_marker = Dot(radius=0.05, color=GREEN).move_to(timeline_dots[0].get_center())
@@ -375,6 +376,8 @@ class ArquitecturaMDPLBTR(Scene):
             run_time=0.8,
         )
         timeline_event = next_event
+        new_title = Text("Arquitectura Motor de Pagos LBTR - TOBE - 2026", font_size=40).to_edge(UP)
+        self.play(Transform(title, new_title), run_time=0.6)
 
         # Switch back to F5 and run all transactions with no timeouts
         self.play(
