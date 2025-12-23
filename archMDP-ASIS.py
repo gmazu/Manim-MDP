@@ -7,7 +7,7 @@ class ArquitecturaMDPLBTR(Scene):
             "Arquitectura sin HA\ndesde marzo 2024\n hasta enero 2025\naproximadamente.",
             font_size=12,
         ).to_corner(UL).shift(DOWN * 1.0 + RIGHT * 0.2)
-        version_document = Text("versión v2.2.2", font_size=9).next_to(title, DOWN, aligned_edge=RIGHT, buff=0.1)
+        version_document = Text("versión v2.2.3", font_size=9).next_to(title, DOWN, aligned_edge=RIGHT, buff=0.1)
         self.play(Write(title), FadeIn(subtitle), FadeIn(version_document))
 
         
@@ -17,8 +17,7 @@ class ArquitecturaMDPLBTR(Scene):
 
         # Timeline de hitos (alineada con la firma)
         timeline_line = Line(LEFT, RIGHT).set_width(version_general.width)
-        timeline_event_positions = [0.05, 0.18, 0.68, 0.8, 0.92]
-        timeline_ref_position = 0.45
+        timeline_positions = [0.0, 0.25, 0.5, 0.75, 1.0]
         timeline_labels = [
             Text("Ene 2024", font_size=7),
             Text("Mar 2024", font_size=7),
@@ -26,25 +25,13 @@ class ArquitecturaMDPLBTR(Scene):
             Text("Dic 2025", font_size=7),
             Text("Ene 2026", font_size=7),
         ]
-        timeline_dots = [Dot(radius=0.04, color=WHITE) for _ in timeline_event_positions]
-        for dot, label, pos in zip(timeline_dots, timeline_labels, timeline_event_positions):
+        timeline_dots = [Dot(radius=0.04, color=WHITE) for _ in timeline_positions]
+        for dot, label, pos in zip(timeline_dots, timeline_labels, timeline_positions):
             dot.move_to(timeline_line.point_from_proportion(pos))
-            label.next_to(dot, UR, buff=0.06).shift(UP * 0.03)
-            label.rotate(PI / 4)
-        timeline_ref_dot = Dot(radius=0.03, color=GRAY).move_to(
-            timeline_line.point_from_proportion(timeline_ref_position)
-        )
-        timeline_ref_label = Text("Jun 2024", font_size=6)
-        timeline_ref_label.next_to(timeline_ref_dot, UR, buff=0.06).shift(UP * 0.03)
-        timeline_ref_label.rotate(PI / 4)
-        timeline_group = VGroup(
-            timeline_line,
-            *timeline_dots,
-            *timeline_labels,
-            timeline_ref_dot,
-            timeline_ref_label,
-        )
-        timeline_group.next_to(version_general, UP, buff=0.2, aligned_edge=RIGHT)
+            label.next_to(dot, UP, buff=0.3).shift(RIGHT * 0.06)
+            label.rotate(PI / 4, about_point=dot.get_center())
+        timeline_group = VGroup(timeline_line, *timeline_dots, *timeline_labels)
+        timeline_group.next_to(version_general, UP, buff=0.22, aligned_edge=RIGHT)
         timeline_marker = Dot(radius=0.05, color=GREEN).move_to(timeline_dots[0].get_center())
         self.play(FadeIn(timeline_group), FadeIn(timeline_marker))
         timeline_event = Text("Creando Escenario", font_size=14).next_to(timeline_group, UP, buff=0.14)
