@@ -8,7 +8,7 @@ def load_timeline_config(path: Path = Path("cronos.yaml")) -> dict:
     if not path.exists():
         return {
             "labels": ["Ene 2024", "Mar 2024", "Nov 2025", "Dic 2025", "Ene 2026"],
-            "events": [
+            "titles": [
                 "Creando Escenario",
                 "Timeout F5",
                 "Bypass Apache",
@@ -16,26 +16,36 @@ def load_timeline_config(path: Path = Path("cronos.yaml")) -> dict:
                 "Switch Apache M1/L1",
                 "RollBack F5",
             ],
+            "details": ["", "", "", "", ""],
         }
     data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     timeline = data.get("timeline") or {}
-    labels = timeline.get("labels") or []
-    events = timeline.get("events") or []
-    if len(labels) < 2:
-        raise ValueError("cronos.yaml: se requieren minimo 2 hitos en timeline.labels")
-    if len(labels) > 6:
+    milestones = timeline.get("milestones") or []
+    if len(milestones) < 2:
+        raise ValueError("cronos.yaml: se requieren minimo 2 hitos en timeline.milestones")
+    if len(milestones) > 6:
         print("cronos.yaml: se paso el maximo de 6 hitos, se usaran solo los primeros 6.")
-        labels = labels[:6]
-    return {"labels": labels, "events": events}
+        milestones = milestones[:6]
+    labels = [str(item.get("label") or "") for item in milestones]
+    titles = [str(item.get("title") or "") for item in milestones]
+    details = [str(item.get("detail") or "") for item in milestones]
+    return {"labels": labels, "titles": titles, "details": details}
 
 class ArquitecturaMDPLBTR(Scene):
     def construct(self):
+        timeline_config = load_timeline_config()
+        titles = timeline_config.get("titles") or []
+        details = timeline_config.get("details") or []
+        def title_text(idx: int, fallback: str) -> str:
+            return titles[idx] if idx < len(titles) and titles[idx] else fallback
+        def detail_text(idx: int) -> str:
+            return details[idx] if idx < len(details) else ""
+
         title = Text("Arquitectura Motor de Pagos LBTR - ASIS - 2025", font_size=40).to_edge(UP)
-        subtitle = Text(
-            "Arquitectura sin HA\ndesde marzo 2024\n hasta enero 2025\naproximadamente.",
-            font_size=12,
-        ).to_corner(UL).shift(DOWN * 1.0 + RIGHT * 0.2)
-        version_document = Text("versión v2.2.4", font_size=9).next_to(title, DOWN, aligned_edge=RIGHT, buff=0.1)
+        default_subtitle = "Arquitectura sin HA\ndesde marzo 2024\n hasta enero 2025\naproximadamente."
+        subtitle_text = detail_text(0) or default_subtitle
+        subtitle = Text(subtitle_text, font_size=12).to_corner(UL).shift(DOWN * 1.0 + RIGHT * 0.2)
+        version_document = Text("versión v2.2.5", font_size=9).next_to(title, DOWN, aligned_edge=RIGHT, buff=0.1)
         self.play(Write(title), FadeIn(subtitle), FadeIn(version_document))
 
         
@@ -44,7 +54,6 @@ class ArquitecturaMDPLBTR(Scene):
         self.play(FadeIn(version_general))
 
         # Timeline de hitos (alineada con la firma)
-        timeline_config = load_timeline_config()
         timeline_line = Line(LEFT, RIGHT).set_width(version_general.width)
         timeline_positions = [i / max(1, len(timeline_config["labels"]) - 1) for i in range(len(timeline_config["labels"]))]
         timeline_labels = [Text(label, font_size=7) for label in timeline_config["labels"]]
@@ -58,15 +67,16 @@ class ArquitecturaMDPLBTR(Scene):
         timeline_group.next_to(version_general, UP, buff=0.22, aligned_edge=RIGHT)
         timeline_marker = Dot(radius=0.05, color=GREEN).move_to(timeline_dots[0].get_center())
         self.play(FadeIn(timeline_group), FadeIn(timeline_marker))
-        events = timeline_config.get("events") or []
-        def event_text(idx: int, fallback: str) -> str:
-            return events[idx] if idx < len(events) else fallback
-
-        timeline_event = Text(event_text(0, "Creando Escenario"), font_size=14).next_to(timeline_group, UP, buff=0.14)
-        self.play(FadeIn(timeline_event), run_time=0.6)
-        next_event = Text(event_text(1, "Timeout F5"), font_size=14).next_to(timeline_group, UP, buff=0.14)
-        self.play(FadeOut(timeline_event), FadeIn(next_event), run_time=0.6)
+        timeline_event = Text(title_text(0, "Creando Escenario"), font_size=14).next_to(timeline_group, UP, buff=0.14)
+        timeline_detail = Text(detail_text(0), font_size=10).next_to(timeline_event, DOWN, buff=0.06)
+        self.play(FadeIn(timeline_event), FadeIn(timeline_detail), run_time=0.6)
+        next_event = Text(title_text(1, "Timeout F5"), font_size=14).next_to(timeline_group, UP, buff=0.14)
+        next_detail = Text(detail_text(1), font_size=10).next_to(next_event, DOWN, buff=0.06)
+        next_subtitle = Text(detail_text(1) or default_subtitle, font_size=12).to_corner(UL).shift(DOWN * 1.0 + RIGHT * 0.2)
+        self.play(FadeOut(timeline_event), FadeOut(timeline_detail), FadeIn(next_event), FadeIn(next_detail), run_time=0.6)
+        self.play(Transform(subtitle, next_subtitle), run_time=0.4)
         timeline_event = next_event
+        timeline_detail = next_detail
 
         # Columnas: MDP → F5 → OSBs → Tuxedos → Tandem
 
@@ -234,14 +244,20 @@ class ArquitecturaMDPLBTR(Scene):
             for i, dot in enumerate(delivered_dots)
         ], run_time=0.6)
 
-        next_event = Text(event_text(2, "Bypass Apache"), font_size=14).next_to(timeline_group, UP, buff=0.14)
+        next_event = Text(title_text(2, "Bypass Apache"), font_size=14).next_to(timeline_group, UP, buff=0.14)
+        next_detail = Text(detail_text(2), font_size=10).next_to(next_event, DOWN, buff=0.06)
+        next_subtitle = Text(detail_text(2) or default_subtitle, font_size=12).to_corner(UL).shift(DOWN * 1.0 + RIGHT * 0.2)
         self.play(
             timeline_marker.animate.move_to(timeline_dots[1].get_center()),
             FadeOut(timeline_event),
+            FadeOut(timeline_detail),
             FadeIn(next_event),
+            FadeIn(next_detail),
             run_time=0.8,
         )
+        self.play(Transform(subtitle, next_subtitle), run_time=0.4)
         timeline_event = next_event
+        timeline_detail = next_detail
 
         # Al ocurrir los timeouts, desconectar todas las líneas previas
         self.play(
@@ -301,14 +317,20 @@ class ArquitecturaMDPLBTR(Scene):
 
         self.play(LaggedStart(*apache_anims, lag_ratio=0.08))
 
-        next_event = Text(event_text(3, "Falla Apache L1"), font_size=14).next_to(timeline_group, UP, buff=0.14)
+        next_event = Text(title_text(3, "Falla Apache L1"), font_size=14).next_to(timeline_group, UP, buff=0.14)
+        next_detail = Text(detail_text(3), font_size=10).next_to(next_event, DOWN, buff=0.06)
+        next_subtitle = Text(detail_text(3) or default_subtitle, font_size=12).to_corner(UL).shift(DOWN * 1.0 + RIGHT * 0.2)
         self.play(
             timeline_marker.animate.move_to(timeline_dots[2].get_center()),
             FadeOut(timeline_event),
+            FadeOut(timeline_detail),
             FadeIn(next_event),
+            FadeIn(next_detail),
             run_time=0.4,
         )
+        self.play(Transform(subtitle, next_subtitle), run_time=0.4)
         timeline_event = next_event
+        timeline_detail = next_detail
 
         # Switch to Apache M1 and run all transactions
         self.play(
@@ -326,14 +348,20 @@ class ArquitecturaMDPLBTR(Scene):
         self.play(Create(line_osb_m1_tux1), run_time=0.25)
         self.play(Create(line_osb_m1_tux2), run_time=0.25)
 
-        next_event = Text(event_text(4, "Switch Apache M1/L1"), font_size=14).next_to(timeline_group, UP, buff=0.14)
+        next_event = Text(title_text(4, "Switch Apache M1/L1"), font_size=14).next_to(timeline_group, UP, buff=0.14)
+        next_detail = Text(detail_text(4), font_size=10).next_to(next_event, DOWN, buff=0.06)
+        next_subtitle = Text(detail_text(4) or default_subtitle, font_size=12).to_corner(UL).shift(DOWN * 1.0 + RIGHT * 0.2)
         self.play(
             timeline_marker.animate.move_to(timeline_dots[3].get_center()),
             FadeOut(timeline_event),
+            FadeOut(timeline_detail),
             FadeIn(next_event),
+            FadeIn(next_detail),
             run_time=0.6,
         )
+        self.play(Transform(subtitle, next_subtitle), run_time=0.4)
         timeline_event = next_event
+        timeline_detail = next_detail
 
         apache_m1_routes = []
         for i in range(16):
@@ -395,14 +423,20 @@ class ArquitecturaMDPLBTR(Scene):
             apache_l1_anims_round2.append(MoveAlongPath(dot, path, rate_func=linear, run_time=2.0))
         self.play(LaggedStart(*apache_l1_anims_round2, lag_ratio=0.08))
 
-        next_event = Text(event_text(5, "RollBack F5"), font_size=14).next_to(timeline_group, UP, buff=0.14)
+        next_event = Text(title_text(5, "RollBack F5"), font_size=14).next_to(timeline_group, UP, buff=0.14)
+        next_detail = Text(detail_text(5), font_size=10).next_to(next_event, DOWN, buff=0.06)
+        next_subtitle = Text(detail_text(5) or default_subtitle, font_size=12).to_corner(UL).shift(DOWN * 1.0 + RIGHT * 0.2)
         self.play(
             timeline_marker.animate.move_to(timeline_dots[4].get_center()),
             FadeOut(timeline_event),
+            FadeOut(timeline_detail),
             FadeIn(next_event),
+            FadeIn(next_detail),
             run_time=0.8,
         )
+        self.play(Transform(subtitle, next_subtitle), run_time=0.4)
         timeline_event = next_event
+        timeline_detail = next_detail
         new_title = Text("Arquitectura Motor de Pagos LBTR - TOBE - 2026", font_size=40).to_edge(UP)
         self.play(Transform(title, new_title), run_time=0.6)
 
@@ -456,8 +490,5 @@ class ArquitecturaMDPLBTR(Scene):
             dot.animate.move_to(tan1.get_center() + tandem_offsets[i % len(tandem_offsets)])
             for i, dot in enumerate(f5_dots_final)
         ], run_time=0.6)
-
-        # Mostrar subtítulo al final
-        self.play(FadeIn(subtitle, run_time=1.3))
 
         self.wait(2)
