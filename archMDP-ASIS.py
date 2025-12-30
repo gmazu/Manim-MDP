@@ -104,8 +104,12 @@ class ArquitecturaMDPLBTR(Scene):
             label.rotate(angle, about_point=dot.get_center())
             label.shift(RIGHT * (dot.get_center()[0] - label.get_left()[0]))
         timeline_group = VGroup(timeline_line, *timeline_dots, *timeline_labels)
-        timeline_group.to_corner(DR).shift(UP * 0.6 + LEFT * 0.1)
+        timeline_group.to_corner(DR).shift(DOWN * 0.2 + LEFT * 0.1)
         start_time = self.renderer.time
+        milestone_times = [
+            pos * duration_seconds for pos in timeline_positions
+        ]
+        transition_seconds = 2.0
         def progress_value() -> float:
             progress = (self.renderer.time - start_time) / max(duration_seconds, 0.1)
             return max(0.0, min(1.0, progress))
@@ -117,9 +121,29 @@ class ArquitecturaMDPLBTR(Scene):
                 if progress >= timeline_positions[idx]:
                     return idx
             return 0
+        def marker_proportion() -> float:
+            if not timeline_positions:
+                return 0.0
+            t = self.renderer.time - start_time
+            if len(timeline_positions) == 1:
+                return timeline_positions[0]
+            for idx in range(len(milestone_times) - 1):
+                boundary = milestone_times[idx + 1]
+                if t < boundary:
+                    return timeline_positions[idx]
+                if t < boundary + transition_seconds:
+                    alpha = (t - boundary) / transition_seconds
+                    return interpolate(
+                        timeline_positions[idx],
+                        timeline_positions[idx + 1],
+                        smooth(alpha),
+                    )
+                if idx + 2 < len(milestone_times) and t < milestone_times[idx + 2]:
+                    return timeline_positions[idx + 1]
+            return timeline_positions[-1]
         timeline_marker = Dot(radius=0.05, color=GREEN)
         timeline_marker.add_updater(
-            lambda mobj: mobj.move_to(timeline_line.point_from_proportion(progress_value()))
+            lambda mobj: mobj.move_to(timeline_line.point_from_proportion(marker_proportion()))
         )
         subtitle = always_redraw(
             lambda: Text(
