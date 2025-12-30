@@ -172,6 +172,23 @@ class ArquitecturaMDPLBTR(Scene):
         self.play(FadeIn(timeline_group), FadeIn(timeline_marker), FadeIn(subtitle))
         self.play(FadeIn(timeline_event), run_time=0.6)
 
+        def base_line(start, end):
+            return Line(start, end).set_stroke(color=WHITE, width=1.2, opacity=0.1)
+
+        def move_with_trail(route, dot, move_time: float, fade_time: float = 0.6):
+            path = VMobject()
+            path.set_points_as_corners(route)
+            trail = VMobject()
+            trail.set_points_as_corners(route)
+            trail.set_stroke(color=WHITE, width=2.4, opacity=0.9)
+            return Succession(
+                AnimationGroup(
+                    MoveAlongPath(dot, path, rate_func=linear, run_time=move_time),
+                    Create(trail, rate_func=linear, run_time=move_time),
+                ),
+                FadeOut(trail, run_time=fade_time),
+            )
+
         # Columnas: MDP → F5 → OSBs → Tuxedos → Tandem
 
         # MDP
@@ -236,26 +253,26 @@ class ArquitecturaMDPLBTR(Scene):
         self.play(FadeIn(legend))
 
         # Conexiones
-        line_mdp_f5 = Line(mdp.get_right(), f5.get_left())
+        line_mdp_f5 = base_line(mdp.get_right(), f5.get_left())
         self.play(Create(line_mdp_f5))
         lines_f5_osb = []
         lines_osb_tux1 = []
         lines_osb_tux2 = []
-        lines_tux_tan = [
-            Line(tux1.get_right(), tan1.get_left()),
-            Line(tux2.get_right(), tan1.get_left()),
-        ]
         for osb in osb_nodes:
-            lfo = Line(f5.get_right(), osb.get_left())
+            lfo = base_line(f5.get_right(), osb.get_left())
             lines_f5_osb.append(lfo)
             self.play(Create(lfo), run_time=0.2)
         for osb in osb_nodes:
-            l1 = Line(osb.get_right(), tux1.get_left())
-            l2 = Line(osb.get_right(), tux2.get_left())
+            l1 = base_line(osb.get_right(), tux1.get_left())
+            l2 = base_line(osb.get_right(), tux2.get_left())
             lines_osb_tux1.append(l1)
             lines_osb_tux2.append(l2)
             self.play(Create(l1), run_time=0.2)
             self.play(Create(l2), run_time=0.2)
+        lines_tux_tan = [
+            base_line(tux1.get_right(), tan1.get_left()),
+            base_line(tux2.get_right(), tan1.get_left()),
+        ]
         self.play(Create(lines_tux_tan[0]), Create(lines_tux_tan[1]))
 
         # Simulación de transacciones: 16 bolitas, la 4ª, 8ª, 12ª y última quedan atascadas en F5
@@ -281,14 +298,11 @@ class ArquitecturaMDPLBTR(Scene):
             self.add(dot)
             if i in stuck_indices:
                 offset = stuck_offsets[len(stuck_dots) % len(stuck_offsets)]
-                path = VMobject()
-                path.set_points_as_corners([mdp.get_right(), f5.get_center() + offset])
-                animations.append(MoveAlongPath(dot, path, rate_func=linear, run_time=0.6))
+                stuck_route = [mdp.get_right(), f5.get_center() + offset]
+                animations.append(move_with_trail(stuck_route, dot, move_time=0.6, fade_time=0.4))
                 stuck_dots.append(dot)
             else:
-                path = VMobject()
-                path.set_points_as_corners(route)
-                animations.append(MoveAlongPath(dot, path, rate_func=linear, run_time=2.0))
+                animations.append(move_with_trail(route, dot, move_time=2.0, fade_time=0.6))
                 delivered_dots.append(dot)
             travel_dots.append(dot)
 
@@ -363,12 +377,12 @@ class ArquitecturaMDPLBTR(Scene):
                   FadeIn(apache_l1), Write(apache_l1_label))
 
         # Nuevas líneas: MDP → Apache L1 → OSB L1 → Tux A/L → Tandem A
-        line_mdp_apache_l1 = Line(mdp.get_right(), apache_l1.get_left())
-        line_apache_l1_osb_l1 = Line(apache_l1.get_right(), osb_nodes[4].get_left())
-        line_osb_l1_tux1 = Line(osb_nodes[4].get_right(), tux1.get_left())
-        line_osb_l1_tux2 = Line(osb_nodes[4].get_right(), tux2.get_left())
-        line_tux1_tan1_new = Line(tux1.get_right(), tan1.get_left())
-        line_tux2_tan1_new = Line(tux2.get_right(), tan1.get_left())
+        line_mdp_apache_l1 = base_line(mdp.get_right(), apache_l1.get_left())
+        line_apache_l1_osb_l1 = base_line(apache_l1.get_right(), osb_nodes[4].get_left())
+        line_osb_l1_tux1 = base_line(osb_nodes[4].get_right(), tux1.get_left())
+        line_osb_l1_tux2 = base_line(osb_nodes[4].get_right(), tux2.get_left())
+        line_tux1_tan1_new = base_line(tux1.get_right(), tan1.get_left())
+        line_tux2_tan1_new = base_line(tux2.get_right(), tan1.get_left())
 
         # Crear de izquierda a derecha (secuencial) como la primera fase
         self.play(Create(line_mdp_apache_l1), run_time=0.3)
@@ -397,9 +411,7 @@ class ArquitecturaMDPLBTR(Scene):
 
         apache_anims = []
         for dot, route in zip(apache_dots, apache_routes):
-            path = VMobject()
-            path.set_points_as_corners(route)
-            apache_anims.append(MoveAlongPath(dot, path, rate_func=linear, run_time=2.0))
+            apache_anims.append(move_with_trail(route, dot, move_time=2.0, fade_time=0.6))
 
         self.play(LaggedStart(*apache_anims, lag_ratio=0.08))
 
@@ -417,10 +429,10 @@ class ArquitecturaMDPLBTR(Scene):
             FadeOut(line_osb_l1_tux1),
             FadeOut(line_osb_l1_tux2),
         )
-        line_mdp_apache_m1 = Line(mdp.get_right(), apache_m1.get_left())
-        line_apache_m1_osb_m1 = Line(apache_m1.get_right(), osb_nodes[0].get_left())
-        line_osb_m1_tux1 = Line(osb_nodes[0].get_right(), tux1.get_left())
-        line_osb_m1_tux2 = Line(osb_nodes[0].get_right(), tux2.get_left())
+        line_mdp_apache_m1 = base_line(mdp.get_right(), apache_m1.get_left())
+        line_apache_m1_osb_m1 = base_line(apache_m1.get_right(), osb_nodes[0].get_left())
+        line_osb_m1_tux1 = base_line(osb_nodes[0].get_right(), tux1.get_left())
+        line_osb_m1_tux2 = base_line(osb_nodes[0].get_right(), tux2.get_left())
         self.play(Create(line_mdp_apache_m1), run_time=0.3)
         self.play(Create(line_apache_m1_osb_m1), run_time=0.3)
         self.play(Create(line_osb_m1_tux1), run_time=0.25)
@@ -443,9 +455,7 @@ class ArquitecturaMDPLBTR(Scene):
             self.add(dot)
         apache_m1_anims = []
         for dot, route in zip(apache_m1_dots, apache_m1_routes):
-            path = VMobject()
-            path.set_points_as_corners(route)
-            apache_m1_anims.append(MoveAlongPath(dot, path, rate_func=linear, run_time=2.0))
+            apache_m1_anims.append(move_with_trail(route, dot, move_time=2.0, fade_time=0.6))
         self.play(LaggedStart(*apache_m1_anims, lag_ratio=0.08))
 
         # Switch back to Apache L1 and run all transactions
@@ -455,10 +465,10 @@ class ArquitecturaMDPLBTR(Scene):
             FadeOut(line_osb_m1_tux1),
             FadeOut(line_osb_m1_tux2),
         )
-        line_mdp_apache_l1_round2 = Line(mdp.get_right(), apache_l1.get_left())
-        line_apache_l1_osb_l1_round2 = Line(apache_l1.get_right(), osb_nodes[4].get_left())
-        line_osb_l1_tux1_round2 = Line(osb_nodes[4].get_right(), tux1.get_left())
-        line_osb_l1_tux2_round2 = Line(osb_nodes[4].get_right(), tux2.get_left())
+        line_mdp_apache_l1_round2 = base_line(mdp.get_right(), apache_l1.get_left())
+        line_apache_l1_osb_l1_round2 = base_line(apache_l1.get_right(), osb_nodes[4].get_left())
+        line_osb_l1_tux1_round2 = base_line(osb_nodes[4].get_right(), tux1.get_left())
+        line_osb_l1_tux2_round2 = base_line(osb_nodes[4].get_right(), tux2.get_left())
         self.play(Create(line_mdp_apache_l1_round2), run_time=0.3)
         self.play(Create(line_apache_l1_osb_l1_round2), run_time=0.3)
         self.play(Create(line_osb_l1_tux1_round2), run_time=0.25)
@@ -481,9 +491,7 @@ class ArquitecturaMDPLBTR(Scene):
             self.add(dot)
         apache_l1_anims_round2 = []
         for dot, route in zip(apache_l1_dots_round2, apache_l1_routes_round2):
-            path = VMobject()
-            path.set_points_as_corners(route)
-            apache_l1_anims_round2.append(MoveAlongPath(dot, path, rate_func=linear, run_time=2.0))
+            apache_l1_anims_round2.append(move_with_trail(route, dot, move_time=2.0, fade_time=0.6))
         self.play(LaggedStart(*apache_l1_anims_round2, lag_ratio=0.08))
 
         move_timeline_to(4, run_time=2.0)
@@ -502,18 +510,18 @@ class ArquitecturaMDPLBTR(Scene):
             FadeOut(line_osb_l1_tux1_round2),
             FadeOut(line_osb_l1_tux2_round2),
         )
-        line_mdp_f5_final = Line(mdp.get_right(), f5.get_left())
+        line_mdp_f5_final = base_line(mdp.get_right(), f5.get_left())
         self.play(Create(line_mdp_f5_final))
         lines_f5_osb_final = []
         lines_osb_tux1_final = []
         lines_osb_tux2_final = []
         for osb in osb_nodes:
-            lfo = Line(f5.get_right(), osb.get_left())
+            lfo = base_line(f5.get_right(), osb.get_left())
             lines_f5_osb_final.append(lfo)
             self.play(Create(lfo), run_time=0.2)
         for osb in osb_nodes:
-            l1 = Line(osb.get_right(), tux1.get_left())
-            l2 = Line(osb.get_right(), tux2.get_left())
+            l1 = base_line(osb.get_right(), tux1.get_left())
+            l2 = base_line(osb.get_right(), tux2.get_left())
             lines_osb_tux1_final.append(l1)
             lines_osb_tux2_final.append(l2)
             self.play(Create(l1), run_time=0.2)
@@ -529,9 +537,7 @@ class ArquitecturaMDPLBTR(Scene):
             self.add(dot)
         f5_anims_final = []
         for dot, route in zip(f5_dots_final, f5_routes_final):
-            path = VMobject()
-            path.set_points_as_corners(route)
-            f5_anims_final.append(MoveAlongPath(dot, path, rate_func=linear, run_time=2.0))
+            f5_anims_final.append(move_with_trail(route, dot, move_time=2.0, fade_time=0.6))
         self.play(LaggedStart(*f5_anims_final, lag_ratio=0.08))
         self.play(*[dot.animate.set_color(GREEN) for dot in f5_dots_final], run_time=1.0)
         tandem_offsets = [
