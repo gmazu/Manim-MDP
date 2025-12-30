@@ -104,33 +104,10 @@ class ArquitecturaMDPLBTR(Scene):
             label.next_to(dot, direction, buff=0.3)
             label.rotate(angle, about_point=dot.get_center())
             label.shift(RIGHT * (dot.get_center()[0] - label.get_left()[0]))
-        start_time = self.renderer.time
-        milestone_times = [
-            pos * duration_seconds for pos in timeline_positions
-        ]
-        transition_seconds = 2.0
         start_index = 1 if len(timeline_positions) > 1 else 0
-        def marker_proportion() -> float:
-            if not timeline_positions:
-                return 0.0
-            t = self.renderer.time - start_time
-            if len(timeline_positions) == 1:
-                return timeline_positions[0]
-            current = timeline_positions[start_index]
-            for idx in range(start_index, len(milestone_times) - 1):
-                boundary = milestone_times[idx + 1]
-                transition_start = max(milestone_times[idx], boundary - transition_seconds)
-                if t < transition_start:
-                    return current
-                if t < boundary:
-                    alpha = (t - transition_start) / max(transition_seconds, 0.1)
-                    return interpolate(
-                        timeline_positions[idx],
-                        timeline_positions[idx + 1],
-                        smooth(alpha),
-                    )
-                current = timeline_positions[idx + 1]
-            return current
+        marker_progress = ValueTracker(
+            timeline_positions[start_index] if timeline_positions else 0.0
+        )
         def progress_line(length: float, color, width: float, opacity: float):
             line = Line(timeline_line.get_start(), timeline_line.get_end())
             line.set_stroke(color=color, width=width, opacity=opacity)
@@ -141,19 +118,19 @@ class ArquitecturaMDPLBTR(Scene):
         progress_track = always_redraw(
             lambda: VGroup(
                 progress_line(
-                    timeline_line.get_length() * marker_proportion(),
+                    timeline_line.get_length() * marker_progress.get_value(),
                     GREEN,
                     6,
                     0.08,
                 ),
                 progress_line(
-                    timeline_line.get_length() * marker_proportion(),
+                    timeline_line.get_length() * marker_progress.get_value(),
                     GREEN,
                     4,
                     0.18,
                 ),
                 progress_line(
-                    timeline_line.get_length() * marker_proportion(),
+                    timeline_line.get_length() * marker_progress.get_value(),
                     GREEN,
                     2.4,
                     0.8,
@@ -163,22 +140,13 @@ class ArquitecturaMDPLBTR(Scene):
 
         timeline_group = VGroup(timeline_line, progress_track, *timeline_dots, *timeline_labels)
         timeline_group.to_corner(DR).shift(DOWN * 0.2 + LEFT * 0.1)
+        current_index_value = [start_index]
         def current_index() -> int:
-            if not timeline_positions:
-                return 0
-            t = self.renderer.time - start_time
-            if len(timeline_positions) == 1:
-                return 0
-            current_idx = start_index
-            for idx in range(start_index, len(milestone_times) - 1):
-                boundary = milestone_times[idx + 1]
-                if t < boundary:
-                    return current_idx
-                current_idx = idx + 1
-            return current_idx
-        timeline_marker = Dot(radius=0.05, color=GREEN)
-        timeline_marker.add_updater(
-            lambda mobj: mobj.move_to(timeline_line.point_from_proportion(marker_proportion()))
+            return current_index_value[0]
+        timeline_marker = always_redraw(
+            lambda: Dot(radius=0.05, color=GREEN).move_to(
+                timeline_line.point_from_proportion(marker_progress.get_value())
+            )
         )
         subtitle = always_redraw(
             lambda: Text(
@@ -192,6 +160,15 @@ class ArquitecturaMDPLBTR(Scene):
                 font_size=14,
             ).next_to(timeline_group, UP, buff=0.14)
         )
+        def move_timeline_to(index: int, run_time: float = 2.0):
+            if not timeline_positions:
+                return
+            target = max(0, min(index, len(timeline_positions) - 1))
+            current_index_value[0] = target
+            self.play(
+                marker_progress.animate.set_value(timeline_positions[target]),
+                run_time=run_time,
+            )
         self.play(FadeIn(timeline_group), FadeIn(timeline_marker), FadeIn(subtitle))
         self.play(FadeIn(timeline_event), run_time=0.6)
 
@@ -361,6 +338,7 @@ class ArquitecturaMDPLBTR(Scene):
             for i, dot in enumerate(delivered_dots)
         ], run_time=0.6)
 
+        move_timeline_to(2, run_time=2.0)
         next_event = Text(title_text(2, "Bypass Apache"), font_size=14).next_to(timeline_group, UP, buff=0.14)
         next_subtitle = Text(detail_text(2) or default_subtitle, font_size=9).next_to(title, DOWN, aligned_edge=LEFT, buff=0.1)
         self.play(FadeOut(timeline_event), FadeIn(next_event), run_time=0.8)
@@ -425,6 +403,7 @@ class ArquitecturaMDPLBTR(Scene):
 
         self.play(LaggedStart(*apache_anims, lag_ratio=0.08))
 
+        move_timeline_to(3, run_time=2.0)
         next_event = Text(title_text(3, "Falla Apache L1"), font_size=14).next_to(timeline_group, UP, buff=0.14)
         next_subtitle = Text(detail_text(3) or default_subtitle, font_size=9).next_to(title, DOWN, aligned_edge=LEFT, buff=0.1)
         self.play(FadeOut(timeline_event), FadeIn(next_event), run_time=0.4)
@@ -507,6 +486,7 @@ class ArquitecturaMDPLBTR(Scene):
             apache_l1_anims_round2.append(MoveAlongPath(dot, path, rate_func=linear, run_time=2.0))
         self.play(LaggedStart(*apache_l1_anims_round2, lag_ratio=0.08))
 
+        move_timeline_to(4, run_time=2.0)
         next_event = Text(title_text(4, "RollBack F5"), font_size=14).next_to(timeline_group, UP, buff=0.14)
         next_subtitle = Text(detail_text(4) or default_subtitle, font_size=9).next_to(title, DOWN, aligned_edge=LEFT, buff=0.1)
         self.play(FadeOut(timeline_event), FadeIn(next_event), run_time=0.8)
