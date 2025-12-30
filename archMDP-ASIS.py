@@ -86,6 +86,7 @@ class ArquitecturaMDPLBTR(Scene):
 
         # Timeline de hitos (alineada con la firma)
         timeline_line = Line(LEFT, RIGHT).set_width(footer.width)
+        timeline_line.set_stroke(color=WHITE, width=2, opacity=0.25)
         label_indexes = [label_to_month_index(label) for label in timeline_config["labels"]]
         if all(idx is not None for idx in label_indexes):
             min_idx = min(label_indexes)
@@ -103,44 +104,78 @@ class ArquitecturaMDPLBTR(Scene):
             label.next_to(dot, direction, buff=0.3)
             label.rotate(angle, about_point=dot.get_center())
             label.shift(RIGHT * (dot.get_center()[0] - label.get_left()[0]))
-        timeline_group = VGroup(timeline_line, *timeline_dots, *timeline_labels)
-        timeline_group.to_corner(DR).shift(DOWN * 0.2 + LEFT * 0.1)
         start_time = self.renderer.time
         milestone_times = [
             pos * duration_seconds for pos in timeline_positions
         ]
         transition_seconds = 2.0
-        def progress_value() -> float:
-            progress = (self.renderer.time - start_time) / max(duration_seconds, 0.1)
-            return max(0.0, min(1.0, progress))
-        def current_index() -> int:
-            if not timeline_positions:
-                return 0
-            progress = progress_value()
-            for idx in range(len(timeline_positions) - 1, -1, -1):
-                if progress >= timeline_positions[idx]:
-                    return idx
-            return 0
+        start_index = 1 if len(timeline_positions) > 1 else 0
         def marker_proportion() -> float:
             if not timeline_positions:
                 return 0.0
             t = self.renderer.time - start_time
             if len(timeline_positions) == 1:
                 return timeline_positions[0]
-            for idx in range(len(milestone_times) - 1):
+            current = timeline_positions[start_index]
+            for idx in range(start_index, len(milestone_times) - 1):
                 boundary = milestone_times[idx + 1]
+                transition_start = max(milestone_times[idx], boundary - transition_seconds)
+                if t < transition_start:
+                    return current
                 if t < boundary:
-                    return timeline_positions[idx]
-                if t < boundary + transition_seconds:
-                    alpha = (t - boundary) / transition_seconds
+                    alpha = (t - transition_start) / max(transition_seconds, 0.1)
                     return interpolate(
                         timeline_positions[idx],
                         timeline_positions[idx + 1],
                         smooth(alpha),
                     )
-                if idx + 2 < len(milestone_times) and t < milestone_times[idx + 2]:
-                    return timeline_positions[idx + 1]
-            return timeline_positions[-1]
+                current = timeline_positions[idx + 1]
+            return current
+        def progress_line(length: float, color, width: float, opacity: float):
+            line = Line(timeline_line.get_start(), timeline_line.get_end())
+            line.set_stroke(color=color, width=width, opacity=opacity)
+            line.set_length(length)
+            line.align_to(timeline_line, LEFT)
+            return line
+
+        progress_track = always_redraw(
+            lambda: VGroup(
+                progress_line(
+                    timeline_line.get_length() * marker_proportion(),
+                    GREEN,
+                    6,
+                    0.08,
+                ),
+                progress_line(
+                    timeline_line.get_length() * marker_proportion(),
+                    GREEN,
+                    4,
+                    0.18,
+                ),
+                progress_line(
+                    timeline_line.get_length() * marker_proportion(),
+                    GREEN,
+                    2.4,
+                    0.8,
+                ),
+            )
+        )
+
+        timeline_group = VGroup(timeline_line, progress_track, *timeline_dots, *timeline_labels)
+        timeline_group.to_corner(DR).shift(DOWN * 0.2 + LEFT * 0.1)
+        def current_index() -> int:
+            if not timeline_positions:
+                return 0
+            t = self.renderer.time - start_time
+            if len(timeline_positions) == 1:
+                return 0
+            current_idx = start_index
+            for idx in range(start_index, len(milestone_times) - 1):
+                boundary = milestone_times[idx + 1]
+                if t < boundary:
+                    return current_idx
+                current_idx = idx + 1
+            return current_idx
         timeline_marker = Dot(radius=0.05, color=GREEN)
         timeline_marker.add_updater(
             lambda mobj: mobj.move_to(timeline_line.point_from_proportion(marker_proportion()))
