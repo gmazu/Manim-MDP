@@ -1,14 +1,19 @@
+# Recomendacion: usa 2 a 6 hitos para que se entienda la historia sin saturar.
 timeline:
-  labels:
-    - Ene 2024
-    - Mar 2024
-    - Nov 2025
-    - Dic 2025
-    - Ene 2026
-  events:
-    - Creando Escenario
-    - Timeout F5
-    - Bypass Apache
-    - Falla Apache L1
-    - Switch Apache M1/L1
-    - RollBack F5
+  duration_seconds: 77
+  milestones:
+    - label: Ene 2025
+      title: Creando Arquitectura MDP
+      detail: Inicio AS-IS sin HA (marzo 2024 aprox.)
+    - label: Mar 2025
+      title: Timeout F5
+      detail: Se observan timeouts en F5
+    - label: Nov 2025
+      title: Bypass Apache
+      detail: Inicio de bypass por Apache Arquitectura sin desde marzo 2024 hasta enero 2025 aproximadamente.
+    - label: Dic 2025
+      title: Falla Apache L1
+      detail: Se reporta falla en Apache L1
+    - label: Ene 2026
+      title: RollBack F5
+      detail: Fin transiente, inicio TOBE
