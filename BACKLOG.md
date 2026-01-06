@@ -41,13 +41,22 @@
 - **Para** visualizar cantidades entregadas
 - **Criterios**: todas las exitosas (iniciales + vía Apache) quedan verdes y se posicionan con offsets sobre Tandem A sin solaparse demasiado.
 
-## HU-07: Líneas más suaves (pendiente)
+## HU-07: Líneas más suaves (hecho)
 - **Como** observador
 - **Quiero** que las líneas blancas sean menos intensas/difusas
 - **Para** que la escena se vea menos cargada visualmente
 - **Criterios**: reducir opacidad o stroke de las líneas blancas en conexiones principales.
 
 ## Registro de cambios
+- [2025-12-30 15:35] **DONE**: reset Apache L1 vibra en blanco tipo LED; versión v2.2.16.
+- [2025-12-30 15:20] **DONE**: reset Apache L1 con parpadeo blanco y leyenda; version v2.2.15.
+- [2025-12-30 15:00] **DONE**: Falla Apache L1 sin switch; pagos quedan en L1 (timeout→gris) y luego reinicio reanuda flujo; versión v2.2.14.
+- [2025-12-30 14:35] **DONE**: Falla Apache L1 switchea a M1 y no vuelve a L1; detalle actualizado en cronos.yaml; versión v2.2.13.
+- [2025-12-30 14:20] **DONE**: rastro se desvanece en su lugar (sin encogerse); versión v2.2.12.
+- [2025-12-30 14:05] **DONE**: rastro más lento en YAML (fade_time 6.0, linger 1.2); versión v2.2.11.
+- [2025-12-30 13:50] **DONE**: parámetros de líneas/rastro a YAML (archMDP-ASIS.yaml); versión v2.2.10.
+- [2025-12-30 13:35] **DONE**: rastro se borra más lento con linger extendido; versión v2.2.9.
+- [2025-12-30 13:20] **DONE**: líneas base más suaves y rastro con mayor linger; desvanecido de origen a Tandem; versión v2.2.8.
 - [2025-12-30 13:05] **DONE**: rutas con entrada/salida 180° en F5/OSB/Tux y rutas Apache; versión v2.2.7.
 - [2025-12-23 12:14] **DONE**: Ajuste de linea de tiempo (alineacion de fechas) y cambio de titulo a TOBE 2026 en hito RollBack F5; version v2.2.4.
 - [2025-12-23 13:42] **DONE**: Subtitulo toma `detail` del hito actual en `cronos.yaml` y se actualiza junto a la linea de tiempo.
