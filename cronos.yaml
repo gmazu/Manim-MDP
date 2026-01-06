@@ -2,18 +2,18 @@
 timeline:
   duration_seconds: 77
   milestones:
-    - label: Ene 2025
+    - label: Agosto 2023
       title: Creando Arquitectura MDP
-      detail: Inicio AS-IS sin HA (marzo 2024 aprox.)
-    - label: Mar 2025
+      detail: Preparando el escenario para explicar el ASIS y TOBE de los timeouts de MDP.
+    - label: Febrero 2024
       title: Timeout F5
-      detail: Se observan timeouts en F5
-    - label: Nov 2025
+      detail: Se observan timeouts en F5 y se decide aplicar Bypass.
+    - label: Marzo 2024
       title: Bypass Apache
       detail: Inicio de bypass por Apache Arquitectura sin desde marzo 2024 hasta enero 2025 aproximadamente.
-    - label: Dic 2025
+    - label: Noviembre 2025
       title: Falla Apache L1
-      detail: Se reporta falla en Apache L1
+      detail: Se reporta falla en Apache L1. y se reinicia.
     - label: Ene 2026
       title: RollBack F5
       detail: Fin transiente, inicio TOBE
