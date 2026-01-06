@@ -278,8 +278,20 @@ class ArquitecturaMDPLBTR(Scene):
         # Simulación de transacciones: 16 bolitas, la 4ª, 8ª, 12ª y última quedan atascadas en F5
         travel_routes = []
         for osb in osb_nodes:
-            travel_routes.append([mdp.get_right(), f5.get_left(), osb.get_left(), tux1.get_left(), tan1.get_left()])
-            travel_routes.append([mdp.get_right(), f5.get_left(), osb.get_left(), tux2.get_left(), tan1.get_left()])
+            travel_routes.append([
+                mdp.get_right(),
+                f5.get_left(), f5.get_right(),
+                osb.get_left(), osb.get_right(),
+                tux1.get_left(), tux1.get_right(),
+                tan1.get_left(),
+            ])
+            travel_routes.append([
+                mdp.get_right(),
+                f5.get_left(), f5.get_right(),
+                osb.get_left(), osb.get_right(),
+                tux2.get_left(), tux2.get_right(),
+                tan1.get_left(),
+            ])
 
         stuck_indices = [3, 7, 11, 15]  # 4ª, 8ª, 12ª y última (0-based)
         stuck_offsets = [
@@ -402,6 +414,7 @@ class ArquitecturaMDPLBTR(Scene):
                 osb_nodes[4].get_left(),
                 osb_nodes[4].get_right(),
                 next_tux.get_left(),
+                next_tux.get_right(),
                 tan1.get_left(),
             ])
 
@@ -448,6 +461,7 @@ class ArquitecturaMDPLBTR(Scene):
                 osb_nodes[0].get_left(),
                 osb_nodes[0].get_right(),
                 next_tux.get_left(),
+                next_tux.get_right(),
                 tan1.get_left(),
             ])
         apache_m1_dots = [Dot(color=WHITE, radius=0.06) for _ in apache_m1_routes]
@@ -484,6 +498,7 @@ class ArquitecturaMDPLBTR(Scene):
                 osb_nodes[4].get_left(),
                 osb_nodes[4].get_right(),
                 next_tux.get_left(),
+                next_tux.get_right(),
                 tan1.get_left(),
             ])
         apache_l1_dots_round2 = [Dot(color=WHITE, radius=0.06) for _ in apache_l1_routes_round2]
@@ -529,8 +544,20 @@ class ArquitecturaMDPLBTR(Scene):
 
         f5_routes_final = []
         for osb in osb_nodes:
-            f5_routes_final.append([mdp.get_right(), f5.get_left(), osb.get_left(), tux1.get_left(), tan1.get_left()])
-            f5_routes_final.append([mdp.get_right(), f5.get_left(), osb.get_left(), tux2.get_left(), tan1.get_left()])
+            f5_routes_final.append([
+                mdp.get_right(),
+                f5.get_left(), f5.get_right(),
+                osb.get_left(), osb.get_right(),
+                tux1.get_left(), tux1.get_right(),
+                tan1.get_left(),
+            ])
+            f5_routes_final.append([
+                mdp.get_right(),
+                f5.get_left(), f5.get_right(),
+                osb.get_left(), osb.get_right(),
+                tux2.get_left(), tux2.get_right(),
+                tan1.get_left(),
+            ])
 
         f5_dots_final = [Dot(color=WHITE, radius=0.06) for _ in f5_routes_final]
         for dot in f5_dots_final:
