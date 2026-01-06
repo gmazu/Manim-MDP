@@ -110,7 +110,7 @@ class ArquitecturaMDPLBTR(Scene):
         title = Text("Arquitectura Motor de Pagos LBTR - ASIS - 2025", font_size=40).to_edge(UP)
         default_subtitle = "Arquitectura sin HA\ndesde marzo 2024\n hasta enero 2025\naproximadamente."
         signature = Text("by eCORE - PNLöP v³ & Manim v0.19.1", font_size=9)
-        version_document = Text("versión v2.2.14", font_size=9)
+        version_document = Text("versión v2.2.15", font_size=9)
         footer = VGroup(signature, version_document).arrange(RIGHT, buff=0.3)
         footer.next_to(title, DOWN, aligned_edge=RIGHT, buff=0.1)
         self.play(Write(title), FadeIn(footer))
@@ -293,6 +293,7 @@ class ArquitecturaMDPLBTR(Scene):
             VGroup(Dot(color=WHITE, radius=0.06), Text("Intento de Pago", font_size=10)).arrange(RIGHT, buff=0.15),
             VGroup(Dot(color=RED, radius=0.06), Text("Pago Timeout", font_size=10)).arrange(RIGHT, buff=0.15),
             VGroup(Dot(color=GREEN, radius=0.06), Text("Pago Exitoso", font_size=10)).arrange(RIGHT, buff=0.15),
+            VGroup(Dot(color=WHITE, radius=0.06), Text("Reset Apache", font_size=10)).arrange(RIGHT, buff=0.15),
 
 
 
@@ -439,6 +440,7 @@ class ArquitecturaMDPLBTR(Scene):
         apache_m1_label = Text("Apache Proxy M1", font_size=14).next_to(apache_m1, UP, buff=0.1)
         apache_l1 = Circle(radius=0.3, color=ORANGE).move_to(LEFT * 3 + DOWN * 1.8)
         apache_l1_label = Text("Apache Proxy L1", font_size=14).next_to(apache_l1, DOWN, buff=0.1)
+        apache_l1_group = VGroup(apache_l1, apache_l1_label)
         self.play(FadeIn(apache_m1), Write(apache_m1_label),
                   FadeIn(apache_l1), Write(apache_l1_label))
 
@@ -528,8 +530,13 @@ class ArquitecturaMDPLBTR(Scene):
         self.play(LaggedStart(*l1_stuck_anims, lag_ratio=0.1))
         self.play(*[dot.animate.set_color(RED) for dot in l1_stuck_dots], run_time=0.8)
         self.play(*[dot.animate.set_color(GRAY) for dot in l1_stuck_dots], run_time=0.8)
-        self.play(apache_l1.animate.set_color(RED), run_time=0.3)
-        self.play(apache_l1.animate.set_color(ORANGE), run_time=0.4)
+        self.play(apache_l1_group.animate.shift(DOWN * 0.18), run_time=0.2)
+        self.play(apache_l1.animate.set_color(WHITE), run_time=0.1)
+        for _ in range(3):
+            self.play(apache_l1.animate.set_stroke(opacity=0.2), run_time=0.1)
+            self.play(apache_l1.animate.set_stroke(opacity=1.0), run_time=0.1)
+        self.play(apache_l1_group.animate.shift(UP * 0.18), run_time=0.2)
+        self.play(apache_l1.animate.set_color(ORANGE), run_time=0.2)
 
         # Reinicio de L1: se restablecen rutas y vuelven a fluir
         self.play(Create(line_apache_l1_osb_l1), run_time=0.3)
