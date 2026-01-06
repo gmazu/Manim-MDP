@@ -79,7 +79,7 @@ class ArquitecturaMDPLBTR(Scene):
         title = Text("Arquitectura Motor de Pagos LBTR - ASIS - 2025", font_size=40).to_edge(UP)
         default_subtitle = "Arquitectura sin HA\ndesde marzo 2024\n hasta enero 2025\naproximadamente."
         signature = Text("by eCORE - PNLöP v³ & Manim v0.19.1", font_size=9)
-        version_document = Text("versión v2.2.6", font_size=9)
+        version_document = Text("versión v2.2.8", font_size=9)
         footer = VGroup(signature, version_document).arrange(RIGHT, buff=0.3)
         footer.next_to(title, DOWN, aligned_edge=RIGHT, buff=0.1)
         self.play(Write(title), FadeIn(footer))
@@ -173,20 +173,30 @@ class ArquitecturaMDPLBTR(Scene):
         self.play(FadeIn(timeline_event), run_time=0.6)
 
         def base_line(start, end):
-            return Line(start, end).set_stroke(color=WHITE, width=1.2, opacity=0.1)
+            return Line(start, end).set_stroke(color=WHITE, width=1.0, opacity=0.07)
 
-        def move_with_trail(route, dot, move_time: float, fade_time: float = 0.6):
+        def move_with_trail(
+            route,
+            dot,
+            move_time: float,
+            fade_time: float = 1.2,
+            linger_time: float = 0.3,
+        ):
             path = VMobject()
             path.set_points_as_corners(route)
             trail = VMobject()
             trail.set_points_as_corners(route)
-            trail.set_stroke(color=WHITE, width=2.4, opacity=0.9)
+            trail.set_stroke(color=WHITE, width=2.0, opacity=0.75)
+            trail_source = trail.copy()
+            def erase_from_start(mob, alpha: float):
+                mob.pointwise_become_partial(trail_source, alpha, 1)
             return Succession(
                 AnimationGroup(
                     MoveAlongPath(dot, path, rate_func=linear, run_time=move_time),
                     Create(trail, rate_func=linear, run_time=move_time),
                 ),
-                FadeOut(trail, run_time=fade_time),
+                Wait(linger_time),
+                UpdateFromAlphaFunc(trail, erase_from_start, run_time=fade_time, rate_func=linear),
             )
 
         # Columnas: MDP → F5 → OSBs → Tuxedos → Tandem
