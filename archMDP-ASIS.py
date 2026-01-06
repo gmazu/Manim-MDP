@@ -110,7 +110,7 @@ class ArquitecturaMDPLBTR(Scene):
         title = Text("Arquitectura Motor de Pagos LBTR - ASIS - 2025", font_size=40).to_edge(UP)
         default_subtitle = "Arquitectura sin HA\ndesde marzo 2024\n hasta enero 2025\naproximadamente."
         signature = Text("by eCORE - PNLöP v³ & Manim v0.19.1", font_size=9)
-        version_document = Text("versión v2.2.13", font_size=9)
+        version_document = Text("versión v2.2.14", font_size=9)
         footer = VGroup(signature, version_document).arrange(RIGHT, buff=0.3)
         footer.next_to(title, DOWN, aligned_edge=RIGHT, buff=0.1)
         self.play(Write(title), FadeIn(footer))
@@ -489,50 +489,74 @@ class ArquitecturaMDPLBTR(Scene):
         self.play(Transform(subtitle, next_subtitle), run_time=0.4)
         timeline_event = next_event
 
-        # Falla en Apache L1: se reinicia y se switchea la carga a M1
+        # Falla en Apache L1: no pasan pagos, se encolan y luego se reinicia L1
         self.play(
-            FadeOut(line_mdp_apache_l1),
             FadeOut(line_apache_l1_osb_l1),
             FadeOut(line_osb_l1_tux1),
             FadeOut(line_osb_l1_tux2),
+            FadeOut(line_tux1_tan1_new),
+            FadeOut(line_tux2_tan1_new),
         )
-        self.play(
-            apache_l1.animate.set_color(RED),
-            run_time=0.3,
-        )
-        self.play(
-            apache_l1.animate.set_color(ORANGE),
-            run_time=0.4,
-        )
-        line_mdp_apache_m1 = base_line(mdp.get_right(), apache_m1.get_left())
-        line_apache_m1_osb_m1 = base_line(apache_m1.get_right(), osb_nodes[0].get_left())
-        line_osb_m1_tux1 = base_line(osb_nodes[0].get_right(), tux1.get_left())
-        line_osb_m1_tux2 = base_line(osb_nodes[0].get_right(), tux2.get_left())
-        self.play(Create(line_mdp_apache_m1), run_time=0.3)
-        self.play(Create(line_apache_m1_osb_m1), run_time=0.3)
-        self.play(Create(line_osb_m1_tux1), run_time=0.25)
-        self.play(Create(line_osb_m1_tux2), run_time=0.25)
+        l1_stuck_offsets = [
+            UP * 0.08 + LEFT * 0.04,
+            DOWN * 0.08 + RIGHT * 0.04,
+            UP * 0.04 + RIGHT * 0.08,
+            DOWN * 0.10 + LEFT * 0.08,
+        ]
+        l1_stuck_routes = []
+        for i in range(8):
+            offset = l1_stuck_offsets[i % len(l1_stuck_offsets)]
+            l1_stuck_routes.append([
+                mdp.get_right(),
+                apache_l1.get_left(),
+                apache_l1.get_center() + offset,
+            ])
+        l1_stuck_dots = [Dot(color=WHITE, radius=0.06) for _ in l1_stuck_routes]
+        for dot in l1_stuck_dots:
+            self.add(dot)
+        l1_stuck_anims = []
+        for dot, route in zip(l1_stuck_dots, l1_stuck_routes):
+            l1_stuck_anims.append(
+                move_with_trail(
+                    route,
+                    dot,
+                    move_time=0.8,
+                    fade_time=trail_stuck_cfg.get("fade_time", 0.4),
+                    linger_time=trail_stuck_cfg.get("linger_time", 0.2),
+                )
+            )
+        self.play(LaggedStart(*l1_stuck_anims, lag_ratio=0.1))
+        self.play(*[dot.animate.set_color(RED) for dot in l1_stuck_dots], run_time=0.8)
+        self.play(*[dot.animate.set_color(GRAY) for dot in l1_stuck_dots], run_time=0.8)
+        self.play(apache_l1.animate.set_color(RED), run_time=0.3)
+        self.play(apache_l1.animate.set_color(ORANGE), run_time=0.4)
 
-        apache_m1_routes = []
+        # Reinicio de L1: se restablecen rutas y vuelven a fluir
+        self.play(Create(line_apache_l1_osb_l1), run_time=0.3)
+        self.play(Create(line_osb_l1_tux1), run_time=0.25)
+        self.play(Create(line_osb_l1_tux2), run_time=0.25)
+        self.play(Create(line_tux1_tan1_new), Create(line_tux2_tan1_new), run_time=0.3)
+
+        apache_l1_routes_round2 = []
         for i in range(16):
             next_tux = tux1 if i % 2 == 0 else tux2
-            apache_m1_routes.append([
+            apache_l1_routes_round2.append([
                 mdp.get_right(),
-                apache_m1.get_left(),
-                apache_m1.get_right(),
-                osb_nodes[0].get_left(),
-                osb_nodes[0].get_right(),
+                apache_l1.get_left(),
+                apache_l1.get_right(),
+                osb_nodes[4].get_left(),
+                osb_nodes[4].get_right(),
                 next_tux.get_left(),
                 next_tux.get_right(),
                 tan1.get_left(),
             ])
-        apache_m1_dots = [Dot(color=WHITE, radius=0.06) for _ in apache_m1_routes]
-        for dot in apache_m1_dots:
+        apache_l1_dots_round2 = [Dot(color=WHITE, radius=0.06) for _ in apache_l1_routes_round2]
+        for dot in apache_l1_dots_round2:
             self.add(dot)
-        apache_m1_anims = []
-        for dot, route in zip(apache_m1_dots, apache_m1_routes):
-            apache_m1_anims.append(move_with_trail(route, dot, move_time=2.0))
-        self.play(LaggedStart(*apache_m1_anims, lag_ratio=0.08))
+        apache_l1_anims_round2 = []
+        for dot, route in zip(apache_l1_dots_round2, apache_l1_routes_round2):
+            apache_l1_anims_round2.append(move_with_trail(route, dot, move_time=2.0))
+        self.play(LaggedStart(*apache_l1_anims_round2, lag_ratio=0.08))
 
         move_timeline_to(4, run_time=2.0)
         next_event = Text(title_text(4, "RollBack F5"), font_size=14).next_to(timeline_group, UP, buff=0.14)
@@ -545,10 +569,12 @@ class ArquitecturaMDPLBTR(Scene):
 
         # Switch back to F5 and run all transactions with no timeouts
         self.play(
-            FadeOut(line_mdp_apache_m1),
-            FadeOut(line_apache_m1_osb_m1),
-            FadeOut(line_osb_m1_tux1),
-            FadeOut(line_osb_m1_tux2),
+            FadeOut(line_mdp_apache_l1),
+            FadeOut(line_apache_l1_osb_l1),
+            FadeOut(line_osb_l1_tux1),
+            FadeOut(line_osb_l1_tux2),
+            FadeOut(line_tux1_tan1_new),
+            FadeOut(line_tux2_tan1_new),
         )
         line_mdp_f5_final = base_line(mdp.get_right(), f5.get_left())
         self.play(Create(line_mdp_f5_final))
