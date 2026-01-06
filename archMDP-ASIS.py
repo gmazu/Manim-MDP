@@ -36,6 +36,32 @@ def load_timeline_config(path: Path = Path("cronos.yaml")) -> dict:
         "duration_seconds": duration_seconds,
     }
 
+def load_visual_config(path: Path = Path("archMDP-ASIS.yaml")) -> dict:
+    defaults = {
+        "base_line": {
+            "width": 1.0,
+            "opacity": 0.07,
+        },
+        "trail": {
+            "width": 2.0,
+            "opacity": 0.75,
+            "fade_time": 3.2,
+            "linger_time": 0.6,
+        },
+        "trail_stuck": {
+            "fade_time": 0.4,
+            "linger_time": 0.2,
+        },
+    }
+    if not path.exists():
+        return defaults
+    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    config = defaults | data
+    config["base_line"] = defaults["base_line"] | (data.get("base_line") or {})
+    config["trail"] = defaults["trail"] | (data.get("trail") or {})
+    config["trail_stuck"] = defaults["trail_stuck"] | (data.get("trail_stuck") or {})
+    return config
+
 
 def label_to_month_index(label: str) -> int | None:
     parts = label.strip().split()
@@ -76,10 +102,15 @@ class ArquitecturaMDPLBTR(Scene):
         def detail_text(idx: int) -> str:
             return details[idx] if idx < len(details) else ""
 
+        visual_config = load_visual_config()
+        base_line_cfg = visual_config.get("base_line") or {}
+        trail_cfg = visual_config.get("trail") or {}
+        trail_stuck_cfg = visual_config.get("trail_stuck") or {}
+
         title = Text("Arquitectura Motor de Pagos LBTR - ASIS - 2025", font_size=40).to_edge(UP)
         default_subtitle = "Arquitectura sin HA\ndesde marzo 2024\n hasta enero 2025\naproximadamente."
         signature = Text("by eCORE - PNLöP v³ & Manim v0.19.1", font_size=9)
-        version_document = Text("versión v2.2.8", font_size=9)
+        version_document = Text("versión v2.2.13", font_size=9)
         footer = VGroup(signature, version_document).arrange(RIGHT, buff=0.3)
         footer.next_to(title, DOWN, aligned_edge=RIGHT, buff=0.1)
         self.play(Write(title), FadeIn(footer))
@@ -173,30 +204,37 @@ class ArquitecturaMDPLBTR(Scene):
         self.play(FadeIn(timeline_event), run_time=0.6)
 
         def base_line(start, end):
-            return Line(start, end).set_stroke(color=WHITE, width=1.0, opacity=0.07)
+            return Line(start, end).set_stroke(
+                color=WHITE,
+                width=base_line_cfg.get("width", 1.0),
+                opacity=base_line_cfg.get("opacity", 0.07),
+            )
 
         def move_with_trail(
             route,
             dot,
             move_time: float,
-            fade_time: float = 1.2,
-            linger_time: float = 0.3,
+            fade_time: float | None = None,
+            linger_time: float | None = None,
         ):
+            fade_time = trail_cfg.get("fade_time", 3.2) if fade_time is None else fade_time
+            linger_time = trail_cfg.get("linger_time", 0.6) if linger_time is None else linger_time
             path = VMobject()
             path.set_points_as_corners(route)
             trail = VMobject()
             trail.set_points_as_corners(route)
-            trail.set_stroke(color=WHITE, width=2.0, opacity=0.75)
-            trail_source = trail.copy()
-            def erase_from_start(mob, alpha: float):
-                mob.pointwise_become_partial(trail_source, alpha, 1)
+            trail.set_stroke(
+                color=WHITE,
+                width=trail_cfg.get("width", 2.0),
+                opacity=trail_cfg.get("opacity", 0.75),
+            )
             return Succession(
                 AnimationGroup(
                     MoveAlongPath(dot, path, rate_func=linear, run_time=move_time),
                     Create(trail, rate_func=linear, run_time=move_time),
                 ),
                 Wait(linger_time),
-                UpdateFromAlphaFunc(trail, erase_from_start, run_time=fade_time, rate_func=linear),
+                FadeOut(trail, run_time=fade_time, rate_func=linear),
             )
 
         # Columnas: MDP → F5 → OSBs → Tuxedos → Tandem
@@ -321,10 +359,16 @@ class ArquitecturaMDPLBTR(Scene):
             if i in stuck_indices:
                 offset = stuck_offsets[len(stuck_dots) % len(stuck_offsets)]
                 stuck_route = [mdp.get_right(), f5.get_center() + offset]
-                animations.append(move_with_trail(stuck_route, dot, move_time=0.6, fade_time=0.4))
+                animations.append(move_with_trail(
+                    stuck_route,
+                    dot,
+                    move_time=0.6,
+                    fade_time=trail_stuck_cfg.get("fade_time", 0.4),
+                    linger_time=trail_stuck_cfg.get("linger_time", 0.2),
+                ))
                 stuck_dots.append(dot)
             else:
-                animations.append(move_with_trail(route, dot, move_time=2.0, fade_time=0.6))
+                animations.append(move_with_trail(route, dot, move_time=2.0))
                 delivered_dots.append(dot)
             travel_dots.append(dot)
 
@@ -434,7 +478,7 @@ class ArquitecturaMDPLBTR(Scene):
 
         apache_anims = []
         for dot, route in zip(apache_dots, apache_routes):
-            apache_anims.append(move_with_trail(route, dot, move_time=2.0, fade_time=0.6))
+            apache_anims.append(move_with_trail(route, dot, move_time=2.0))
 
         self.play(LaggedStart(*apache_anims, lag_ratio=0.08))
 
@@ -445,12 +489,20 @@ class ArquitecturaMDPLBTR(Scene):
         self.play(Transform(subtitle, next_subtitle), run_time=0.4)
         timeline_event = next_event
 
-        # Switch to Apache M1 and run all transactions
+        # Falla en Apache L1: se reinicia y se switchea la carga a M1
         self.play(
             FadeOut(line_mdp_apache_l1),
             FadeOut(line_apache_l1_osb_l1),
             FadeOut(line_osb_l1_tux1),
             FadeOut(line_osb_l1_tux2),
+        )
+        self.play(
+            apache_l1.animate.set_color(RED),
+            run_time=0.3,
+        )
+        self.play(
+            apache_l1.animate.set_color(ORANGE),
+            run_time=0.4,
         )
         line_mdp_apache_m1 = base_line(mdp.get_right(), apache_m1.get_left())
         line_apache_m1_osb_m1 = base_line(apache_m1.get_right(), osb_nodes[0].get_left())
@@ -479,45 +531,8 @@ class ArquitecturaMDPLBTR(Scene):
             self.add(dot)
         apache_m1_anims = []
         for dot, route in zip(apache_m1_dots, apache_m1_routes):
-            apache_m1_anims.append(move_with_trail(route, dot, move_time=2.0, fade_time=0.6))
+            apache_m1_anims.append(move_with_trail(route, dot, move_time=2.0))
         self.play(LaggedStart(*apache_m1_anims, lag_ratio=0.08))
-
-        # Switch back to Apache L1 and run all transactions
-        self.play(
-            FadeOut(line_mdp_apache_m1),
-            FadeOut(line_apache_m1_osb_m1),
-            FadeOut(line_osb_m1_tux1),
-            FadeOut(line_osb_m1_tux2),
-        )
-        line_mdp_apache_l1_round2 = base_line(mdp.get_right(), apache_l1.get_left())
-        line_apache_l1_osb_l1_round2 = base_line(apache_l1.get_right(), osb_nodes[4].get_left())
-        line_osb_l1_tux1_round2 = base_line(osb_nodes[4].get_right(), tux1.get_left())
-        line_osb_l1_tux2_round2 = base_line(osb_nodes[4].get_right(), tux2.get_left())
-        self.play(Create(line_mdp_apache_l1_round2), run_time=0.3)
-        self.play(Create(line_apache_l1_osb_l1_round2), run_time=0.3)
-        self.play(Create(line_osb_l1_tux1_round2), run_time=0.25)
-        self.play(Create(line_osb_l1_tux2_round2), run_time=0.25)
-
-        apache_l1_routes_round2 = []
-        for i in range(16):
-            next_tux = tux1 if i % 2 == 0 else tux2
-            apache_l1_routes_round2.append([
-                mdp.get_right(),
-                apache_l1.get_left(),
-                apache_l1.get_right(),
-                osb_nodes[4].get_left(),
-                osb_nodes[4].get_right(),
-                next_tux.get_left(),
-                next_tux.get_right(),
-                tan1.get_left(),
-            ])
-        apache_l1_dots_round2 = [Dot(color=WHITE, radius=0.06) for _ in apache_l1_routes_round2]
-        for dot in apache_l1_dots_round2:
-            self.add(dot)
-        apache_l1_anims_round2 = []
-        for dot, route in zip(apache_l1_dots_round2, apache_l1_routes_round2):
-            apache_l1_anims_round2.append(move_with_trail(route, dot, move_time=2.0, fade_time=0.6))
-        self.play(LaggedStart(*apache_l1_anims_round2, lag_ratio=0.08))
 
         move_timeline_to(4, run_time=2.0)
         next_event = Text(title_text(4, "RollBack F5"), font_size=14).next_to(timeline_group, UP, buff=0.14)
@@ -530,10 +545,10 @@ class ArquitecturaMDPLBTR(Scene):
 
         # Switch back to F5 and run all transactions with no timeouts
         self.play(
-            FadeOut(line_mdp_apache_l1_round2),
-            FadeOut(line_apache_l1_osb_l1_round2),
-            FadeOut(line_osb_l1_tux1_round2),
-            FadeOut(line_osb_l1_tux2_round2),
+            FadeOut(line_mdp_apache_m1),
+            FadeOut(line_apache_m1_osb_m1),
+            FadeOut(line_osb_m1_tux1),
+            FadeOut(line_osb_m1_tux2),
         )
         line_mdp_f5_final = base_line(mdp.get_right(), f5.get_left())
         self.play(Create(line_mdp_f5_final))
@@ -574,7 +589,7 @@ class ArquitecturaMDPLBTR(Scene):
             self.add(dot)
         f5_anims_final = []
         for dot, route in zip(f5_dots_final, f5_routes_final):
-            f5_anims_final.append(move_with_trail(route, dot, move_time=2.0, fade_time=0.6))
+            f5_anims_final.append(move_with_trail(route, dot, move_time=2.0))
         self.play(LaggedStart(*f5_anims_final, lag_ratio=0.08))
         self.play(*[dot.animate.set_color(GREEN) for dot in f5_dots_final], run_time=1.0)
         tandem_offsets = [
