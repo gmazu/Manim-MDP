@@ -110,7 +110,7 @@ class ArquitecturaMDPLBTR(Scene):
         title = Text("Arquitectura Motor de Pagos LBTR - ASIS - 2025", font_size=40).to_edge(UP)
         default_subtitle = "Arquitectura sin HA\ndesde marzo 2024\n hasta enero 2025\naproximadamente."
         signature = Text("by eCORE - PNLöP v³ & Manim v0.19.1", font_size=9)
-        version_document = Text("versión v2.2.15", font_size=9)
+        version_document = Text("versión v2.2.16", font_size=9)
         footer = VGroup(signature, version_document).arrange(RIGHT, buff=0.3)
         footer.next_to(title, DOWN, aligned_edge=RIGHT, buff=0.1)
         self.play(Write(title), FadeIn(footer))
@@ -532,9 +532,17 @@ class ArquitecturaMDPLBTR(Scene):
         self.play(*[dot.animate.set_color(GRAY) for dot in l1_stuck_dots], run_time=0.8)
         self.play(apache_l1_group.animate.shift(DOWN * 0.18), run_time=0.2)
         self.play(apache_l1.animate.set_color(WHITE), run_time=0.1)
-        for _ in range(3):
-            self.play(apache_l1.animate.set_stroke(opacity=0.2), run_time=0.1)
-            self.play(apache_l1.animate.set_stroke(opacity=1.0), run_time=0.1)
+        for offset in [UP * 0.04, DOWN * 0.04, RIGHT * 0.04, LEFT * 0.04]:
+            self.play(
+                apache_l1_group.animate.shift(offset),
+                apache_l1.animate.set_stroke(opacity=0.2),
+                run_time=0.08,
+            )
+            self.play(
+                apache_l1_group.animate.shift(-offset),
+                apache_l1.animate.set_stroke(opacity=1.0),
+                run_time=0.08,
+            )
         self.play(apache_l1_group.animate.shift(UP * 0.18), run_time=0.2)
         self.play(apache_l1.animate.set_color(ORANGE), run_time=0.2)
 
